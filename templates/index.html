@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ship Classifier</title>
+</head>
+<body style="background-color: black; color: white; font-family: Arial, sans-serif; padding: 20px;">
+    <h1>Ship Type Classifier 🚢</h1>
+    <form method="POST" action="/predict" enctype="multipart/form-data">
+        <p>Upload WAV file:</p>
+        <input type="file" name="audio"><br><br>
+
+        <p>OR input MFCC values (comma separated):</p>
+        <input type="text" name="features" size="100" placeholder="e.g. -123.4, 24.6, ..., 12.3"><br><br>
+
+        <input type="submit" value="Predict">
+    </form>
+
+    {% if prediction_text %}
+        <h2>{{ prediction_text }}</h2>
+    {% endif %}
+</body>
+</html>
+

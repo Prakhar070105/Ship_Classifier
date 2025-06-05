@@ -1,0 +1,51 @@
+body {
+    background-color: #111;
+    color: white;
+    font-family: Arial;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+}
+
+.tabs {
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    background-color: #222;
+    color: white;
+    padding: 10px 20px;
+    margin-right: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.tab-button.active {
+    background-color: #555;
+}
+
+.tab-content {
+    display: none;
+    margin-top: 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.alert {
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.alert.success { background-color: green; }
+.alert.danger { background-color: red; }
+
+.result {
+    margin-top: 20px;
+    background-color: #333;
+    padding: 10px;
+}

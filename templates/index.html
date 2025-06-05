@@ -1,23 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Ship Classifier</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body style="background-color: black; color: white; font-family: Arial, sans-serif; padding: 20px;">
-    <h1>Ship Type Classifier 🚢</h1>
-    <form method="POST" action="/predict" enctype="multipart/form-data">
-        <p>Upload WAV file:</p>
-        <input type="file" name="audio"><br><br>
+<body>
+    <div class="container">
+        <h1>Ship Classifier</h1>
+        <div class="tabs">
+            <button class="tab-button" onclick="switchTab('predict')">Predict</button>
+            <button class="tab-button" onclick="switchTab('train')">Train New</button>
+        </div>
 
-        <p>OR input MFCC values (comma separated):</p>
-        <input type="text" name="features" size="100" placeholder="e.g. -123.4, 24.6, ..., 12.3"><br><br>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
 
-        <input type="submit" value="Predict">
-    </form>
+        <div id="predict" class="tab-content active">
+            <form method="POST" enctype="multipart/form-data">
+                <h2>Upload Audio</h2>
+                <input type="file" name="audio_file">
+                <h3>OR</h3>
+                <input type="text" name="manual_input" placeholder="Comma-separated MFCC values">
+                <br><br>
+                <button type="submit" name="predict_btn">Predict</button>
+            </form>
+            {% if prediction %}
+                <div class="result">
+                    <h3>Prediction:</h3>
+                    <p>{{ prediction }}</p>
+                </div>
+            {% endif %}
+        </div>
 
-    {% if prediction_text %}
-        <h2>{{ prediction_text }}</h2>
-    {% endif %}
+        <div id="train" class="tab-content">
+            <form method="POST">
+                <h2>Retrain Model</h2>
+                <p>This will use data from new_data.csv</p>
+                <button type="submit" name="train_btn">Train and Save</button>
+            </form>
+        </div>
+    </div>
+
+<script>
+function switchTab(tabName) {
+    var contents = document.querySelectorAll('.tab-content');
+    var buttons = document.querySelectorAll('.tab-button');
+    contents.forEach(c => c.classList.remove('active'));
+    buttons.forEach(b => b.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    event.target.classList.add('active');
+}
+</script>
 </body>
 </html>
 

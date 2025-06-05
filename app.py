@@ -1,43 +1,56 @@
-from flask import Flask, request, render_template
-import joblib
+from flask import Flask, render_template, request, redirect, url_for, flash
 import numpy as np
-import librosa
 import os
+import librosa
+import joblib
+from utils import extract_features, append_training_data, retrain_model
 
 app = Flask(__name__)
-model = joblib.load("trained_model.joblib")
+app.secret_key = 'ship_secret'
 
-def extract_features(file_path, n_mfcc=13):
-    y, sr = librosa.load(file_path, sr=None)
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
-    return np.mean(mfcc.T, axis=0)
+model_path = 'trained_model.joblib'
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+# Load model initially
+def load_model():
+    return joblib.load(model_path)
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    if 'audio' in request.files:
-        audio = request.files['audio']
-        path = os.path.join("temp_audio.wav")
-        audio.save(path)
-        features = extract_features(path)
-        os.remove(path)
-        prediction = model.predict([features])[0]
-        return render_template('index.html', prediction_text=f"Predicted Ship Type: {prediction}")
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    prediction = None
+    if request.method == 'POST':
+        model = load_model()
 
-    elif request.form.get('features'):
-        try:
-            input_features = request.form['features']
-            features = np.array([float(x) for x in input_features.strip().split(',')])
-            prediction = model.predict([features])[0]
-            return render_template('index.html', prediction_text=f"Predicted Ship Type: {prediction}")
-        except Exception as e:
-            return render_template('index.html', prediction_text=f"Error: {e}")
+        if 'predict_btn' in request.form:
+            if 'audio_file' in request.files and request.files['audio_file'].filename != '':
+                audio = request.files['audio_file']
+                audio_path = os.path.join("temp.wav")
+                audio.save(audio_path)
 
-    return render_template('index.html', prediction_text="Please upload a file or input features.")
+                features = extract_features(audio_path)
+                os.remove(audio_path)
 
-if __name__ == "__main__":
+                if features is not None:
+                    prediction = model.predict([features])[0]
+                    append_training_data(features, prediction)
+                else:
+                    flash("Failed to extract features from audio file", "danger")
+
+            elif request.form.get('manual_input'):
+                try:
+                    values = list(map(float, request.form['manual_input'].strip().split(',')))
+                    prediction = model.predict([values])[0]
+                    append_training_data(values, prediction)
+                except:
+                    flash("Invalid manual input", "danger")
+
+        elif 'train_btn' in request.form:
+            success = retrain_model()
+            if success:
+                flash("Model retrained successfully!", "success")
+            else:
+                flash("Training failed. Check logs or data.", "danger")
+
+    return render_template('index.html', prediction=prediction)
+
+if __name__ == '__main__':
     app.run(debug=True)
-

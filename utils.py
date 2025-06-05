@@ -1,35 +1,45 @@
-import os
+import numpy as np
 import pandas as pd
+import os
+import librosa
+import joblib
+from sklearn.ensemble import RandomForestClassifier
 
-def load_all_labels(root_dir):
-    data = []
+FEATURES_FILE = "new_data.csv"
+MODEL_FILE = "trained_model.joblib"
 
-    for ship_class in os.listdir(root_dir):
-        class_path = os.path.join(root_dir, ship_class)
-        if not os.path.isdir(class_path):
-            continue
+def extract_features(file_path, n_mfcc=13):
+    try:
+        y, sr = librosa.load(file_path, sr=None)
+        mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
+        return np.mean(mfccs.T, axis=0)
+    except Exception as e:
+        print(f"Feature extraction error: {e}")
+        return None
 
-        for file_name in os.listdir(class_path):
-            if not file_name.endswith(".wav"):
-                continue
+def append_training_data(features, label):
+    row = list(features) + [label]
+    header = [f"mfcc_{i}" for i in range(len(features))] + ["label"]
+    df = pd.DataFrame([row], columns=header)
 
-            # Build path to labels.csv in same folder
-            ship_name = os.path.splitext(file_name)[0]  # remove .wav
-            meta_path = os.path.join(class_path, "labels.csv")  # assume labels.csv is in class folder
+    if not os.path.exists(FEATURES_FILE):
+        df.to_csv(FEATURES_FILE, index=False)
+    else:
+        df.to_csv(FEATURES_FILE, mode='a', header=False, index=False)
 
-            if os.path.exists(meta_path):
-                try:
-                    df = pd.read_csv(meta_path)
-                    df["filepath"] = os.path.join(class_path, file_name)
-                    df["ship_type"] = ship_class
-                    data.append(df)
-                except Exception as e:
-                    print(f"Error reading {meta_path}: {e}")
-            else:
-                print(f"labels.csv not found at: {meta_path}")
+def retrain_model():
+    if not os.path.exists(FEATURES_FILE):
+        return False
 
-    if not data:
-        raise FileNotFoundError("No labels.csv files were loaded. Check your directory structure.")
+    df = pd.read_csv(FEATURES_FILE)
+    if df.empty or "label" not in df.columns:
+        return False
 
-    return pd.concat(data, ignore_index=True)
+    X = df.drop("label", axis=1).values
+    y = df["label"].values
+
+    clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    clf.fit(X, y)
+    joblib.dump(clf, MODEL_FILE)
+    return True
 

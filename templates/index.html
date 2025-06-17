@@ -9,18 +9,19 @@
     <div class="container">
         <h1>Ship Classifier</h1>
         <div class="tabs">
-            <button class="tab-button" onclick="switchTab('predict')">Predict</button>
-            <button class="tab-button" onclick="switchTab('train')">Train New</button>
+            <button class="tab-button active" onclick="switchTab(event, 'predict')">Predict</button>
+            <button class="tab-button" onclick="switchTab(event, 'train')">Train New</button>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
+        {% if messages %}
             {% for category, message in messages %}
-              <div class="alert {{ category }}">{{ message }}</div>
+                <div class="alert {{ category }}">{{ message }}</div>
             {% endfor %}
-          {% endif %}
+        {% endif %}
         {% endwith %}
 
+        <!-- Predict Tab -->
         <div id="predict" class="tab-content active">
             <form method="POST" enctype="multipart/form-data">
                 <h2>Upload Audio</h2>
@@ -38,25 +39,57 @@
             {% endif %}
         </div>
 
+        <!-- Train Tab -->
         <div id="train" class="tab-content">
+            <form method="POST" enctype="multipart/form-data">
+                <h2>Add New Training Data</h2>
+
+                <label for="label">Label (Ship Type):</label>
+                <select name="label" required>
+                    <option value="Passenger">Passenger</option>
+                    <option value="Tug">Tug</option>
+                    <option value="Tanker">Tanker</option>
+                    <option value="Cargo">Cargo</option>
+                </select>
+
+                <h3>Upload New Audio (.wav)</h3>
+                <input type="file" name="new_audio">
+
+                <h3>OR</h3>
+                <input type="text" name="manual_mfcc" placeholder="Comma-separated MFCC values">
+
+                <br><br>
+                <button type="submit" name="add_train_btn">Add Training Data</button>
+            </form>
+
+            <hr>
+
             <form method="POST">
                 <h2>Retrain Model</h2>
-                <p>This will use data from new_data.csv</p>
+                <p>This will use data from <code>new_data.csv</code></p>
                 <button type="submit" name="train_btn">Train and Save</button>
             </form>
         </div>
     </div>
 
 <script>
-function switchTab(tabName) {
-    var contents = document.querySelectorAll('.tab-content');
-    var buttons = document.querySelectorAll('.tab-button');
+function switchTab(evt, tabName) {
+    var i, contents, buttons;
+    contents = document.querySelectorAll('.tab-content');
+    buttons = document.querySelectorAll('.tab-button');
+
     contents.forEach(c => c.classList.remove('active'));
     buttons.forEach(b => b.classList.remove('active'));
+
     document.getElementById(tabName).classList.add('active');
-    event.target.classList.add('active');
+    evt.target.classList.add('active');
 }
 </script>
 </body>
 </html>
+
+
+
+
+
 
